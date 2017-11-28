@@ -187,6 +187,7 @@ create_ipv6_socket(int port)
 	return fd;
 }
 
+/*Create an IPV4 only socket if IPV6 isn't available.*/
 
 int
 create_ipv4_socket(int port)
@@ -203,8 +204,8 @@ create_ipv4_socket(int port)
                 return -1;
         }
 
-                int no = 0;
-                err = setsockopt(fd, IPPROTO_IP, IPPROTO_TCP, (char*)&no, sizeof(no));
+          int no = 0;
+         err = setsockopt(fd, IPPROTO_IP, IPPROTO_TCP, (char*)&no, sizeof(no));
                 if (err != 0) {
                         ERROR_MSG("setsockopt(!IPV6_V6ONLY): %s\n",
                                 error_msg(WSAGetLastError()));
