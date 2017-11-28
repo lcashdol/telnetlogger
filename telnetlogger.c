@@ -188,6 +188,57 @@ create_ipv6_socket(int port)
 }
 
 
+int
+create_ipv4_socket(int port)
+{
+        int fd;
+        int err;
+        struct sockaddr_in6 localaddr;
+
+        /* Create a generic socket. IPv6 includes IPv4 */
+        fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (fd <= 0) {
+                ERROR_MSG("socket(AF_INET6): could not create socket: %s\n",
+                        error_msg(WSAGetLastError()));
+                return -1;
+        }
+
+                int no = 0;
+                err = setsockopt(fd, IPPROTO_IP, IPPROTO_TCP, (char*)&no, sizeof(no));
+                if (err != 0) {
+                        ERROR_MSG("setsockopt(!IPV6_V6ONLY): %s\n",
+                                error_msg(WSAGetLastError()));
+                        closesocket(fd);
+                        return -1;
+                }
+
+        memset(&localaddr, 0, sizeof(localaddr));
+        localaddr.sin6_family = AF_INET;
+        localaddr.sin6_port = htons(port);
+        localaddr.sin6_addr = in6addr_any;
+        err = bind(fd, (struct sockaddr*)&localaddr, sizeof(localaddr));
+        if (err < 0) {
+                ERROR_MSG("bind(%u): %s\n", port,
+                        error_msg(WSAGetLastError()));
+                closesocket(fd);
+                return -1;
+        }
+
+        /* Now the final initializaiton step */
+        err = listen(fd, 10);
+        if (err < 0) {
+                ERROR_MSG("listen(%u): %s\n", port,
+                        error_msg(WSAGetLastError()));
+                closesocket(fd);
+                return -1;
+        }
+
+        return fd;
+}
+
+
+
+
 /******************************************************************************
  * Blacklist some bad characters to avoid the most obvious attempts of 
  * entering bad passwords designed to hack the system (shell injection,
@@ -551,6 +602,8 @@ daemon_thread(int port, FILE *fp_passwords, FILE *fp_ips, FILE *fp_csv)
 	int fd;
 	
 	fd = create_ipv6_socket(port);
+	if (fd <= 0)
+        fd = create_ipv4_socket(port);
 	if (fd <= 0)
 		return;
 
