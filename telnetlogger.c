@@ -196,22 +196,13 @@ create_ipv4_socket(int port)
         int err;
         struct sockaddr_in6 localaddr;
 
-        /* Create a generic socket. IPv6 includes IPv4 */
+        /* Create a socket for IPv4 */
         fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (fd <= 0) {
-                ERROR_MSG("socket(AF_INET6): could not create socket: %s\n",
+                ERROR_MSG("socket(AF_INET): could not create socket: %s\n",
                         error_msg(WSAGetLastError()));
                 return -1;
         }
-
-          int no = 0;
-         err = setsockopt(fd, IPPROTO_IP, IPPROTO_TCP, (char*)&no, sizeof(no));
-                if (err != 0) {
-                        ERROR_MSG("setsockopt(!IPV6_V6ONLY): %s\n",
-                                error_msg(WSAGetLastError()));
-                        closesocket(fd);
-                        return -1;
-                }
 
         memset(&localaddr, 0, sizeof(localaddr));
         localaddr.sin6_family = AF_INET;
